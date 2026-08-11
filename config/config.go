@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -28,9 +27,12 @@ func (au *allowedUsers) Decode(value string) error {
 	}
 	ids := strings.Split(string(value), ",")
 	for _, id := range ids {
-		idInt, err := strconv.ParseInt(id, 10, 64)
+		idInt, err := strconv.ParseInt(strings.TrimSpace(id), 10, 64)
 		if err != nil {
 			return err
+		}
+		if idInt <= 0 {
+			return errors.New("ALLOWED_USERS entries must be positive numeric Telegram user IDs")
 		}
 		*au = append(*au, idInt)
 	}
@@ -45,7 +47,7 @@ type config struct {
 	Dev            bool         `envconfig:"DEV" default:"false"`
 	Port           int          `envconfig:"PORT" default:"8080"`
 	Host           string       `envconfig:"HOST" default:""`
-	HashLength     int          `envconfig:"HASH_LENGTH" default:"6"`
+	HashLength     int          `envconfig:"HASH_LENGTH" default:"24"`
 	UseSessionFile bool         `envconfig:"USE_SESSION_FILE" default:"true"`
 	UserSession    string       `envconfig:"USER_SESSION"`
 	UsePublicIP    bool         `envconfig:"USE_PUBLIC_IP" default:"false"`
@@ -59,7 +61,7 @@ type config struct {
 	StreamMaxRetries  int `envconfig:"STREAM_MAX_RETRIES" default:"3"`
 }
 
-var botTokenRegex = regexp.MustCompile(`MULTI\_TOKEN\d+=(.*)`)
+var botTokenRegex = regexp.MustCompile(`^MULTI_TOKEN\d+=(.+)$`)
 
 func (c *config) loadFromEnvFile(log *zap.Logger) {
 	envPath := filepath.Clean("fsb.env")
@@ -171,13 +173,13 @@ func (c *config) setupEnvVars(log *zap.Logger, cmd *cobra.Command) {
 	if err != nil {
 		log.Fatal("Error while parsing env variables", zap.Error(err))
 	}
-	var ipBlocked bool
-	ip, err := getIP(c.UsePublicIP)
-	if err != nil {
-		log.Error("Error while getting IP", zap.Error(err))
-		ipBlocked = true
-	}
 	if c.Host == "" {
+		var ipBlocked bool
+		ip, err := getIP(c.UsePublicIP)
+		if err != nil {
+			log.Error("Error while getting IP", zap.Error(err))
+			ipBlocked = true
+		}
 		c.Host = "http://" + ip + ":" + strconv.Itoa(c.Port)
 		if c.UsePublicIP {
 			if ipBlocked {
@@ -189,13 +191,12 @@ func (c *config) setupEnvVars(log *zap.Logger, cmd *cobra.Command) {
 		}
 		log.Sugar().Info("HOST not set, automatically set to " + c.Host)
 	}
-	val := reflect.ValueOf(c).Elem()
 	for _, env := range os.Environ() {
-		if strings.HasPrefix(env, "MULTI_TOKEN") {
-			c.MultiTokens = append(c.MultiTokens, botTokenRegex.FindStringSubmatch(env)[1])
+		matches := botTokenRegex.FindStringSubmatch(env)
+		if len(matches) == 2 {
+			c.MultiTokens = append(c.MultiTokens, matches[1])
 		}
 	}
-	val.FieldByName("MultiTokens").Set(reflect.ValueOf(c.MultiTokens))
 }
 
 func Load(log *zap.Logger, cmd *cobra.Command) {
@@ -203,17 +204,13 @@ func Load(log *zap.Logger, cmd *cobra.Command) {
 	defer log.Info("Loaded config")
 	ValueOf.setupEnvVars(log, cmd)
 	ValueOf.LogChannelID = int64(stripInt(log, int(ValueOf.LogChannelID)))
-	if ValueOf.HashLength == 0 {
-		log.Sugar().Info("HASH_LENGTH can't be 0, defaulting to 6")
-		ValueOf.HashLength = 6
-	}
 	if ValueOf.HashLength > 32 {
 		log.Sugar().Info("HASH_LENGTH can't be more than 32, changing to 32")
 		ValueOf.HashLength = 32
 	}
-	if ValueOf.HashLength < 5 {
-		log.Sugar().Info("HASH_LENGTH can't be less than 5, defaulting to 6")
-		ValueOf.HashLength = 6
+	if ValueOf.HashLength < 24 {
+		log.Sugar().Info("HASH_LENGTH can't be less than 24, defaulting to 24")
+		ValueOf.HashLength = 24
 	}
 	if ValueOf.StreamConcurrency <= 0 {
 		log.Sugar().Info("STREAM_CONCURRENCY must be greater than 0, defaulting to 4")

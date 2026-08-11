@@ -1,15 +1,28 @@
-name: TG File Stream Bot
+name: tg-file-stream-bot
 
 services:
   fsb-run:
-    image: ghcr.io/everythingsuckz/fsb
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tg-file-stream-bot:local
     container_name: fsb
-    restart: always
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     volumes:
-      - ./logs:/app/logs
-      - ./fsb.env:/app/fsb.env
+      - fsb-logs:/app/logs
+      - fsb-sessions:/app/sessions
+    tmpfs:
+      - /tmp:noexec,nosuid,size=16m
     ports:
-      - "${PORT:-8038}:${PORT:-8038}"
+      - "127.0.0.1:8080:8080"
     env_file:
-      - path: ./fsb.env
-        required: true
+      - ./fsb.env
+
+volumes:
+  fsb-logs:
+  fsb-sessions:

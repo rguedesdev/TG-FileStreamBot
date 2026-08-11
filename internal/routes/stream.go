@@ -7,8 +7,11 @@ import (
 	"EverythingSuckz/fsb/internal/utils"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
+	"path"
 	"strconv"
+	"strings"
 
 	"github.com/gotd/td/tg"
 	range_parser "github.com/quantumsheep/range-parser"
@@ -23,6 +26,7 @@ func (e *allRoutes) LoadHome(r *Route) {
 	log = e.log.Named("Stream")
 	defer log.Info("Loaded stream route")
 	r.Engine.GET("/stream/:messageID", getStreamRoute)
+	r.Engine.HEAD("/stream/:messageID", getStreamRoute)
 }
 
 func getStreamRoute(ctx *gin.Context) {
@@ -31,8 +35,8 @@ func getStreamRoute(ctx *gin.Context) {
 
 	messageIDParm := ctx.Param("messageID")
 	messageID, err := strconv.Atoi(messageIDParm)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if err != nil || messageID <= 0 {
+		http.Error(w, "invalid message ID", http.StatusBadRequest)
 		return
 	}
 
@@ -48,7 +52,8 @@ func getStreamRoute(ctx *gin.Context) {
 		return utils.FileFromMessage(ctx, worker.Client, messageID)
 	})
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Warn("Failed to resolve stream message", zap.Int("messageID", messageID), zap.Error(err))
+		http.Error(w, "file not found or link invalid", http.StatusNotFound)
 		return
 	}
 
@@ -59,7 +64,7 @@ func getStreamRoute(ctx *gin.Context) {
 		file.ID,
 	)
 	if !utils.CheckHash(authHash, expectedHash) {
-		http.Error(w, "invalid hash", http.StatusBadRequest)
+		http.Error(w, "file not found or link invalid", http.StatusNotFound)
 		return
 	}
 
@@ -71,7 +76,8 @@ func getStreamRoute(ctx *gin.Context) {
 			Limit:    1024 * 1024,
 		})
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Error("Failed to download photo", zap.Int("messageID", messageID), zap.Error(err))
+			http.Error(w, "failed to stream file", http.StatusBadGateway)
 			return
 		}
 		result, ok := res.(*tg.UploadFile)
@@ -80,63 +86,93 @@ func getStreamRoute(ctx *gin.Context) {
 			return
 		}
 		fileBytes := result.GetBytes()
-		ctx.Header("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", file.FileName))
-		if r.Method != "HEAD" {
-			ctx.Data(http.StatusOK, file.MimeType, fileBytes)
+		start, end, status, err := parseRequestedRange(int64(len(fileBytes)), r.Header.Get("Range"))
+		if err != nil {
+			ctx.Header("Content-Range", fmt.Sprintf("bytes */%d", len(fileBytes)))
+			http.Error(w, "requested range is not satisfiable", http.StatusRequestedRangeNotSatisfiable)
+			return
 		}
+		setFileHeaders(ctx, file.FileName, file.MimeType, end-start+1, "inline")
+		if status == http.StatusPartialContent {
+			ctx.Header("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, len(fileBytes)))
+		}
+		if r.Method == http.MethodHead {
+			ctx.Status(status)
+			return
+		}
+		ctx.Data(status, normalizedMIME(file.MimeType), fileBytes[start:end+1])
 		return
 	}
 
-	ctx.Header("Accept-Ranges", "bytes")
-	var start, end int64
-	rangeHeader := r.Header.Get("Range")
-
-	if rangeHeader == "" {
-		start = 0
-		end = file.FileSize - 1
-		w.WriteHeader(http.StatusOK)
-	} else {
-		ranges, err := range_parser.Parse(file.FileSize, r.Header.Get("Range"))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		start = ranges[0].Start
-		end = ranges[0].End
+	start, end, status, err := parseRequestedRange(file.FileSize, r.Header.Get("Range"))
+	if err != nil {
+		ctx.Header("Content-Range", fmt.Sprintf("bytes */%d", file.FileSize))
+		http.Error(w, "requested range is not satisfiable", http.StatusRequestedRangeNotSatisfiable)
+		return
+	}
+	if status == http.StatusPartialContent {
 		ctx.Header("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, file.FileSize))
 		log.Info("Content-Range", zap.Int64("start", start), zap.Int64("end", end), zap.Int64("fileSize", file.FileSize))
-		w.WriteHeader(http.StatusPartialContent)
 	}
 
 	contentLength := end - start + 1
-	mimeType := file.MimeType
-
-	if mimeType == "" {
-		mimeType = "application/octet-stream"
-	}
-
-	ctx.Header("Content-Type", mimeType)
-	ctx.Header("Content-Length", strconv.FormatInt(contentLength, 10))
-
 	disposition := "inline"
-
 	if ctx.Query("d") == "true" {
 		disposition = "attachment"
 	}
+	setFileHeaders(ctx, file.FileName, file.MimeType, contentLength, disposition)
 
-	ctx.Header("Content-Disposition", fmt.Sprintf("%s; filename=\"%s\"", disposition, file.FileName))
-
-	if r.Method != "HEAD" {
-		pipe, err := stream.NewStreamPipe(ctx, worker.Client, file.Location, start, end, log)
-		if err != nil {
-			log.Error("Failed to create stream pipe", zap.Error(err))
-			return
-		}
-		defer pipe.Close()
-		if _, err := io.CopyN(w, pipe, contentLength); err != nil {
-			if !utils.IsClientDisconnectError(err) {
-				log.Error("Error while copying stream", zap.Error(err))
-			}
+	if r.Method == http.MethodHead {
+		ctx.Status(status)
+		return
+	}
+	ctx.Status(status)
+	pipe, err := stream.NewStreamPipe(ctx, worker.Client, file.Location, start, end, log)
+	if err != nil {
+		log.Error("Failed to create stream pipe", zap.Error(err))
+		return
+	}
+	defer pipe.Close()
+	if _, err := io.CopyN(w, pipe, contentLength); err != nil {
+		if !utils.IsClientDisconnectError(err) {
+			log.Error("Error while copying stream", zap.Error(err))
 		}
 	}
+}
+
+func parseRequestedRange(size int64, rangeHeader string) (start, end int64, status int, err error) {
+	if size <= 0 {
+		return 0, 0, 0, fmt.Errorf("invalid file size: %d", size)
+	}
+	if rangeHeader == "" {
+		return 0, size - 1, http.StatusOK, nil
+	}
+	ranges, err := range_parser.Parse(size, rangeHeader)
+	if err != nil || len(ranges) != 1 {
+		return 0, 0, 0, fmt.Errorf("unsupported or invalid range")
+	}
+	return ranges[0].Start, ranges[0].End, http.StatusPartialContent, nil
+}
+
+func normalizedMIME(mimeType string) string {
+	if mimeType == "" {
+		return "application/octet-stream"
+	}
+	return mimeType
+}
+
+func setFileHeaders(ctx *gin.Context, fileName, mimeType string, contentLength int64, disposition string) {
+	fileName = strings.Map(func(r rune) rune {
+		if r < 0x20 || r == 0x7f {
+			return -1
+		}
+		return r
+	}, path.Base(strings.ReplaceAll(fileName, "\\", "/")))
+	if fileName == "" || fileName == "." {
+		fileName = "file"
+	}
+	ctx.Header("Accept-Ranges", "bytes")
+	ctx.Header("Content-Type", normalizedMIME(mimeType))
+	ctx.Header("Content-Length", strconv.FormatInt(contentLength, 10))
+	ctx.Header("Content-Disposition", mime.FormatMediaType(disposition, map[string]string{"filename": fileName}))
 }

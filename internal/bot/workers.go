@@ -46,33 +46,34 @@ func (w *BotWorkers) Init(log *zap.Logger) {
 }
 
 func (w *BotWorkers) AddDefaultClient(client *gotgproto.Client, self *tg.User) {
-	if w.Bots == nil {
-		w.Bots = make([]*Worker, 0)
-	}
-	w.incStarting()
+	botID := w.nextID()
+	w.mut.Lock()
+	defer w.mut.Unlock()
 	w.Bots = append(w.Bots, &Worker{
 		Client: client,
-		ID:     w.starting,
+		ID:     botID,
 		Self:   self,
 		log:    w.log,
 	})
 	w.log.Sugar().Info("Default bot loaded")
 }
 
-func (w *BotWorkers) incStarting() {
+func (w *BotWorkers) nextID() int {
 	w.mut.Lock()
 	defer w.mut.Unlock()
 	w.starting++
+	return w.starting
 }
 
 func (w *BotWorkers) Add(token string) (err error) {
-	w.incStarting()
-	var botID int = w.starting
+	botID := w.nextID()
 	client, err := startWorker(w.log, token, botID)
 	if err != nil {
 		return err
 	}
 	w.log.Sugar().Infof("Bot @%s loaded with ID %d", client.Self.Username, botID)
+	w.mut.Lock()
+	defer w.mut.Unlock()
 	w.Bots = append(w.Bots, &Worker{
 		Client: client,
 		ID:     botID,
@@ -103,7 +104,7 @@ func StartWorkers(log *zap.Logger) (*BotWorkers, error) {
 	if config.ValueOf.UseSessionFile {
 		Workers.log.Sugar().Info("Using session file for workers")
 		newpath := filepath.Join(".", "sessions")
-		if err := os.MkdirAll(newpath, os.ModePerm); err != nil {
+		if err := os.MkdirAll(newpath, 0o700); err != nil {
 			Workers.log.Error("Failed to create sessions directory", zap.Error(err))
 			return nil, err
 		}

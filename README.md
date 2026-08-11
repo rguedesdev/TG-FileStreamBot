@@ -13,6 +13,36 @@
   </p>
 </p>
 
+## Safe local setup
+
+This fork builds and runs as a separate service. It does not require an external
+database: the Telegram session is stored in a local SQLite session file and file
+metadata is cached in memory.
+
+Create the ignored local configuration without adding secrets to Git:
+
+```sh
+cp fsb.sample.env fsb.env
+chmod 600 fsb.env
+```
+
+Fill `API_ID`, `API_HASH`, `BOT_TOKEN`, `LOG_CHANNEL`, `ALLOWED_USERS`, and
+`HOST` locally. `ALLOWED_USERS` is a comma-separated list of numeric Telegram
+user IDs, for example `12345,67890` (no usernames). Leaving it empty allows any
+Telegram user who can contact the bot to submit files. It does not restrict
+people who already possess a generated HTTP link.
+
+Generated links are bearer links authenticated with an HMAC derived from the bot
+token. Keep `HASH_LENGTH` between 24 and 32 and do not publish complete URLs. The
+HTTP logger omits query strings so hashes are not written to access logs. For a
+local-only first test, use `HOST=http://localhost:8080`.
+
+Build the fork without starting the bot:
+
+```sh
+docker compose build
+```
+
 
 
 

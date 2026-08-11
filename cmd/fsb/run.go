@@ -63,7 +63,22 @@ func getRouter(log *zap.Logger) *gin.Engine {
 	} else {
 		gin.SetMode(gin.ReleaseMode)
 	}
-	router := gin.Default()
+	router := gin.New()
+	router.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+		// Generated links are bearer credentials. Never log their query string.
+		return fmt.Sprintf("[GIN] %s | %3d | %13v | %15s | %-7s %s\n",
+			param.TimeStamp.Format("2006/01/02 - 15:04:05"),
+			param.StatusCode,
+			param.Latency,
+			param.ClientIP,
+			param.Method,
+			param.Request.URL.Path,
+		)
+	}))
+	router.Use(gin.CustomRecoveryWithWriter(nil, func(ctx *gin.Context, recovered any) {
+		log.Error("Recovered HTTP panic", zap.Any("panic", recovered), zap.Stack("stack"))
+		ctx.AbortWithStatus(http.StatusInternalServerError)
+	}))
 	router.Use(gin.ErrorLogger())
 	router.GET("/", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, types.RootResponse{

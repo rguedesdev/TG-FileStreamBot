@@ -20,14 +20,25 @@ go.work
 # Env files
 fsb.env
 .env
+.env.*
+fsb.*.env
+!fsb.sample.env
 
 # Session files
 *.session*
-sessons/
+sessions/
 
-# build folder
+# Build artifacts
+/fsb
+/TG-FileStreamBot
 dist/
 
-# logs folder
+# Logs and local runtime data
 logs/
 *.log
+
+# Temporary and coverage files
+tmp/
+*.tmp
+coverage/
+coverage.*

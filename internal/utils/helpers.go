@@ -54,13 +54,27 @@ func GetTGMessage(ctx context.Context, client *gotgproto.Client, messageID int) 
 	if err != nil {
 		return nil, err
 	}
-	messages := res.(*tg.MessagesChannelMessages)
-	message := messages.Messages[0]
-	if _, ok := message.(*tg.Message); ok {
-		return message.(*tg.Message), nil
-	} else {
-		return nil, fmt.Errorf("this file was deleted")
+	var messages []tg.MessageClass
+	switch result := res.(type) {
+	case *tg.MessagesMessages:
+		messages = result.GetMessages()
+	case *tg.MessagesMessagesSlice:
+		messages = result.GetMessages()
+	case *tg.MessagesChannelMessages:
+		messages = result.GetMessages()
+	case *tg.MessagesMessagesNotModified:
+		return nil, errors.New("message response was not modified")
+	default:
+		return nil, fmt.Errorf("unexpected messages response type %T", res)
 	}
+	if len(messages) == 0 {
+		return nil, errors.New("message not found")
+	}
+	message, ok := messages[0].(*tg.Message)
+	if !ok {
+		return nil, errors.New("message does not contain an accessible file")
+	}
+	return message, nil
 }
 
 func FileFromMedia(media tg.MessageMediaClass) (*types.File, error) {

@@ -2,11 +2,29 @@ package utils
 
 import (
 	"EverythingSuckz/fsb/config"
-	"EverythingSuckz/fsb/internal/types"
+	"crypto/hmac"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/binary"
+	"encoding/hex"
 )
 
 func PackFile(fileName string, fileSize int64, mimeType string, fileID int64) string {
-	return (&types.HashableFileStruct{FileName: fileName, FileSize: fileSize, MimeType: mimeType, FileID: fileID}).Pack()
+	mac := hmac.New(sha256.New, []byte(config.ValueOf.BotToken))
+	writeHashString(mac, fileName)
+	_ = binary.Write(mac, binary.BigEndian, fileSize)
+	writeHashString(mac, mimeType)
+	_ = binary.Write(mac, binary.BigEndian, fileID)
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
+type hashWriter interface {
+	Write([]byte) (int, error)
+}
+
+func writeHashString(writer hashWriter, value string) {
+	_ = binary.Write(writer, binary.BigEndian, uint64(len(value)))
+	_, _ = writer.Write([]byte(value))
 }
 
 func GetShortHash(fullHash string) string {
@@ -14,5 +32,6 @@ func GetShortHash(fullHash string) string {
 }
 
 func CheckHash(inputHash string, expectedHash string) bool {
-	return inputHash == GetShortHash(expectedHash)
+	expected := GetShortHash(expectedHash)
+	return len(inputHash) == len(expected) && subtle.ConstantTimeCompare([]byte(inputHash), []byte(expected)) == 1
 }

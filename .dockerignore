@@ -1,0 +1,21 @@
+.git
+.github
+.vscode
+
+# Local credentials and runtime state must never enter the build context.
+fsb.env
+.env
+.env.*
+fsb.*.env
+*.session*
+sessions/
+logs/
+
+# Local build and temporary artifacts.
+fsb
+TG-FileStreamBot
+dist/
+tmp/
+*.tmp
+coverage/
+coverage.*

@@ -30,8 +30,8 @@
             "required": false
         },
         "HASH_LENGTH": {
-            "description": "Custom hash length for generated URLs. The hash length must be greater than 5 and less than or equal to 32. Default to 6",
-            "value": "6",
+            "description": "Custom hash length for generated URLs. The supported range is 24 to 32 characters. Default is 24",
+            "value": "24",
             "required": false
         },
         "USE_SESSION_FILE": {
