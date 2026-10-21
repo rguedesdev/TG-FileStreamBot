@@ -47,6 +47,7 @@ type config struct {
 	Dev            bool         `envconfig:"DEV" default:"false"`
 	Port           int          `envconfig:"PORT" default:"8080"`
 	Host           string       `envconfig:"HOST" default:""`
+	UploadToken    string       `envconfig:"UPLOAD_TOKEN" default:""`
 	HashLength     int          `envconfig:"HASH_LENGTH" default:"24"`
 	UseSessionFile bool         `envconfig:"USE_SESSION_FILE" default:"true"`
 	UserSession    string       `envconfig:"USER_SESSION"`
