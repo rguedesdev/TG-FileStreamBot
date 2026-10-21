@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"EverythingSuckz/fsb/config"
-	"EverythingSuckz/fsb/internal/utils"
+	"github.com/rguedesdev/TG-FileStreamBot/config"
+	"github.com/rguedesdev/TG-FileStreamBot/internal/utils"
 
 	"github.com/celestix/gotgproto/dispatcher"
 	"github.com/celestix/gotgproto/dispatcher/handlers"

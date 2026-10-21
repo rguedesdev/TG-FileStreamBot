@@ -15,7 +15,7 @@ ERROR='\033[38;2;230;57;70m'        # coral-mid
 MUTED='\033[38;2;90;100;128m'       # text-muted
 NC='\033[0m' # No Color
 
-REPO="EverythingSuckz/TG-FileStreamBot"
+REPO="rguedesdev/TG-FileStreamBot"
 GUM_VERSION="0.13.0"
 TMPFILES=()
 HAS_TTY="false"
@@ -564,7 +564,7 @@ main() {
 
     if command -v gpg &> /dev/null; then
         ui_info "gpg detected. Fetching developer's public key..."
-        download_file "https://github.com/EverythingSuckz.gpg" "dev_key.asc"
+        download_file "https://github.com/rguedesdev.gpg" "dev_key.asc"
         
         # Create a temporary keyring to avoid polluting the user's keychain
         local keyring="--no-default-keyring --keyring ./temp_keyring.gpg"

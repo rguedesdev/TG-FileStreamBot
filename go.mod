@@ -1,4 +1,4 @@
-module EverythingSuckz/fsb
+module github.com/rguedesdev/TG-FileStreamBot
 
 go 1.25.0
 

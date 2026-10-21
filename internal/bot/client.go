@@ -1,8 +1,8 @@
 package bot
 
 import (
-	"EverythingSuckz/fsb/config"
-	"EverythingSuckz/fsb/internal/commands"
+	"github.com/rguedesdev/TG-FileStreamBot/config"
+	"github.com/rguedesdev/TG-FileStreamBot/internal/commands"
 	"context"
 	"fmt"
 	"os"

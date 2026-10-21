@@ -1,12 +1,12 @@
 package main
 
 import (
-	"EverythingSuckz/fsb/config"
-	"EverythingSuckz/fsb/internal/bot"
-	"EverythingSuckz/fsb/internal/cache"
-	"EverythingSuckz/fsb/internal/routes"
-	"EverythingSuckz/fsb/internal/types"
-	"EverythingSuckz/fsb/internal/utils"
+	"github.com/rguedesdev/TG-FileStreamBot/config"
+	"github.com/rguedesdev/TG-FileStreamBot/internal/bot"
+	"github.com/rguedesdev/TG-FileStreamBot/internal/cache"
+	"github.com/rguedesdev/TG-FileStreamBot/internal/routes"
+	"github.com/rguedesdev/TG-FileStreamBot/internal/types"
+	"github.com/rguedesdev/TG-FileStreamBot/internal/utils"
 	"fmt"
 	"net/http"
 	"time"

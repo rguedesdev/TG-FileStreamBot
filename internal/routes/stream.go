@@ -1,10 +1,10 @@
 package routes
 
 import (
-	"EverythingSuckz/fsb/internal/bot"
-	"EverythingSuckz/fsb/internal/stream"
-	"EverythingSuckz/fsb/internal/types"
-	"EverythingSuckz/fsb/internal/utils"
+	"github.com/rguedesdev/TG-FileStreamBot/internal/bot"
+	"github.com/rguedesdev/TG-FileStreamBot/internal/stream"
+	"github.com/rguedesdev/TG-FileStreamBot/internal/types"
+	"github.com/rguedesdev/TG-FileStreamBot/internal/utils"
 	"fmt"
 	"io"
 	"mime"

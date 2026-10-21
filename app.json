@@ -10,7 +10,7 @@
         "file-to-link",
         "TG-FileStreamBot"
     ],
-    "repository": "https://github.com/EverythingSuckz/TG-FileStreamBot",
+    "repository": "https://github.com/rguedesdev/TG-FileStreamBot",
     "logo": "https://telegra.ph/file/a8bb3f6b334ad1200ddb4.png",
     "env": {
         "API_ID": {

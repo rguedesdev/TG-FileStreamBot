@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"EverythingSuckz/fsb/internal/types"
+	"github.com/rguedesdev/TG-FileStreamBot/internal/types"
 	"bytes"
 	"encoding/gob"
 	"sync"

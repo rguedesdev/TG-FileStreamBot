@@ -1,7 +1,7 @@
 package main
 
 import (
-	"EverythingSuckz/fsb/config"
+	"github.com/rguedesdev/TG-FileStreamBot/config"
 	"fmt"
 	"os"
 

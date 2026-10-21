@@ -13,9 +13,9 @@ import (
     "strings"
     "time"
 
-    "EverythingSuckz/fsb/config"
-    "EverythingSuckz/fsb/internal/bot"
-    "EverythingSuckz/fsb/internal/utils"
+    "github.com/rguedesdev/TG-FileStreamBot/config"
+    "github.com/rguedesdev/TG-FileStreamBot/internal/bot"
+    "github.com/rguedesdev/TG-FileStreamBot/internal/utils"
     "github.com/gin-gonic/gin"
     "go.uber.org/zap"
 )

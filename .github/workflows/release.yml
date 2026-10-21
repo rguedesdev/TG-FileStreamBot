@@ -17,8 +17,7 @@ permissions:
 
 jobs:
   goreleaser:
-    # This upstream publishing workflow must never release from a fork.
-    if: github.repository == 'EverythingSuckz/TG-FileStreamBot'
+    if: github.repository == 'rguedesdev/TG-FileStreamBot'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

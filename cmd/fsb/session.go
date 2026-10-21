@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"EverythingSuckz/fsb/pkg/qrlogin"
+	"github.com/rguedesdev/TG-FileStreamBot/pkg/qrlogin"
 
 	"github.com/spf13/cobra"
 )

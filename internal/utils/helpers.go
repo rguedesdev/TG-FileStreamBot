@@ -1,9 +1,9 @@
 package utils
 
 import (
-	"EverythingSuckz/fsb/config"
-	"EverythingSuckz/fsb/internal/cache"
-	"EverythingSuckz/fsb/internal/types"
+	"github.com/rguedesdev/TG-FileStreamBot/config"
+	"github.com/rguedesdev/TG-FileStreamBot/internal/cache"
+	"github.com/rguedesdev/TG-FileStreamBot/internal/types"
 	"context"
 	"errors"
 	"fmt"

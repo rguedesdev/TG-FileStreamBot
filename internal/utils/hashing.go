@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"EverythingSuckz/fsb/config"
+	"github.com/rguedesdev/TG-FileStreamBot/config"
 	"crypto/hmac"
 	"crypto/sha256"
 	"crypto/subtle"

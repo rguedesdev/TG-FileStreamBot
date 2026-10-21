@@ -26,7 +26,7 @@ builds:
 
 dockers_v2:
   - images:
-      - "ghcr.io/everythingsuckz/fsb"
+      - "ghcr.io/rguedesdev/fsb"
     ids:
       - fsb
     
@@ -84,6 +84,6 @@ changelog:
 
 release:
   github:
-    owner: EverythingSuckz
+    owner: rguedesdev
     name: TG-FileStreamBot
   prerelease: auto
