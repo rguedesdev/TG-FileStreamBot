@@ -1,5 +1,13 @@
 # Telegram File Stream Bot
 
+![Go](https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white)
+![Telegram](https://img.shields.io/badge/Telegram-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)
+![gotgproto](https://img.shields.io/badge/gotgproto-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)
+![gotd](https://img.shields.io/badge/gotd-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)
+![Gin](https://img.shields.io/badge/Gin-008ECF?style=for-the-badge&logo=gin&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-066DA5?style=for-the-badge&logo=docker&logoColor=white)
+
 Bot para transformar arquivos armazenados no Telegram em links HTTP públicos. O arquivo fica guardado em um canal privado do Telegram e o serviço entrega seu conteúdo por streaming, sem precisar baixar o arquivo inteiro antes de começar a reprodução ou o download.
 
 Este repositório é uma adaptação do [TG-FileStreamBot](https://github.com/EverythingSuckz/TG-FileStreamBot), modificada para atender a uma instalação própria e integrar o envio de arquivos ao serviço que hospeda o bot.
